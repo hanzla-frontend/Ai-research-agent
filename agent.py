@@ -13,6 +13,17 @@ from crewai import Agent, Task, Crew, Process, LLM
 
 from tools.search_tool import duckduckgo_search_tool
 
+# --- Workaround for a known CrewAI bug (as of crewai 1.15.22) ---
+# CrewAI tags every message with an internal 'cache_breakpoint' marker meant
+# only for Anthropic's prompt-caching API, but never strips it for other
+# providers. Groq's API rejects this unknown field with:
+#   litellm.BadRequestError: GroqException - property 'cache_breakpoint' is unsupported
+# See: https://github.com/crewAIInc/crewAI/issues/5886
+# We don't use Anthropic prompt caching here, so disabling the marker is safe.
+import crewai.llms.cache as _crewai_cache
+
+_crewai_cache.mark_cache_breakpoint = lambda message: message
+
 
 def build_crew(topic: str) -> Crew:
     """Create and return a ready-to-run Crew for the given research topic."""
